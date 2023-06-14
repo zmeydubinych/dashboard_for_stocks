@@ -1,8 +1,8 @@
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import requests
-from bs4 import BeautifulSoup
+# import numpy as np
+# import pandas as pd
+# import matplotlib.pyplot as plt
+# import requests
+# from bs4 import BeautifulSoup
 
 # ticket=input()
 # url1='https://www.marketwatch.com/investing/stock/'+ticket+'/financials?mod=mw_quote_tab'
@@ -36,4 +36,3 @@ from bs4 import BeautifulSoup
 #     netflix_data = netflix_data._append(
 #         {"Date": date}, ignore_index=True)
 #
-
