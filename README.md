@@ -1,1 +1,1 @@
-# This is my python's pet projects
+# This is my python pet projects
