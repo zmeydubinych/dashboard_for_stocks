@@ -156,31 +156,21 @@ def get_output(entered_ticket, date_range):
     fig.update_yaxes(tickprefix="$", showgrid=True)
 
     info = data_stock.info
+
+    # def get_block(label, value): 
+    #     return html.Div([label, value])
+
     text = html.Div([
-        html.Span('Name: '),
-        html.Span(info['longName']),
+        html.Div(['Name: ', info['longName']]),
+        html.Div(['Country: ', info['longName']]),
+        html.Div(['City: ', info['city']]),
+        html.Div(['ZIP: ', info['zip']]),
+        html.Div(['Address: ', info['address1']]),
+        html.Div(['Industry: ', info['industry']]),
+        html.Div(['Industry: ', info['longName']]),
+        html.Div(['Website: ', html.A(info['website'], href=info['website'])]),
         html.Br(),
-        html.Span('Country: '),
-        html.Span(info['country']),
-        html.Br(),
-        html.Span('City: '),
-        html.Span(info['city']),
-        html.Br(),
-        html.Span('ZIP: '),
-        html.Span(info['zip']),
-        html.Br(),
-        html.Span('Address: '),
-        html.Span(info['address1']),
-        html.Br(),
-        html.Span('Industry: '),
-        html.Span(info['industry']),
-        html.Br(),
-        html.Span('Website: '),
-        html.A(info['website'], href=info['website']),
-        html.Br(),
-        html.Br(),
-        html.Span('Bussiness Summary: '),
-        html.P(info['longBusinessSummary'])
+        html.Div(['Bussiness Summary:', html.P(info['longBusinessSummary'])])
     ])
 
     text2 = html.Div([
