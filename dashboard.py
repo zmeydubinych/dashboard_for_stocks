@@ -5,6 +5,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 import yfinance as yf
 from scrapping import df_new
+from predicter import intrinsic_value_next
 
 
 # Блок дашборда
@@ -43,22 +44,26 @@ app.layout = html.Div(children=[html.H1('Dashboard: market price and evaluated p
                                         dcc.RangeSlider(
                                             id='date-slider',
                                             min=0,
-                                            max=10,
+                                            max=14,
                                             step=None,
                                             marks={
-                                                0: '2013-12-31',
-                                                1: '2015-12-31',
-                                                2: '2016-12-31',
-                                                3: '2017-12-31',
-                                                4: '2018-12-31',
-                                                5: '2019-12-31',
-                                                6: '2020-12-31',
-                                                7: '2021-12-31',
-                                                8: '2022-12-31',
-                                                9: '2023-12-31',
-                                                10: '2024-12-31',
+                                                0: '2009-12-31',
+                                                1: '2010-12-31',
+                                                2: '2011-12-31',
+                                                3: '2012-12-31',
+                                                4: '2013-12-31',
+                                                5: '2014-12-31',
+                                                6: '2015-12-31',
+                                                7: '2016-12-31',
+                                                8: '2017-12-31',
+                                                9: '2018-12-31',
+                                                10: '2019-12-31',
+                                                11: '2020-12-31',
+                                                12: '2021-12-31',
+                                                13: '2022-12-31',
+                                                14: '2023-12-31',
                                             },
-                                            value=[0, 10]
+                                            value=[0, 14]
                                         )
                                     ])
                                 ]),
@@ -68,6 +73,7 @@ app.layout = html.Div(children=[html.H1('Dashboard: market price and evaluated p
                                     html.Button('Make a prediction, this may take several minutes',
                                                 id='submit-val', n_clicks=0)
                                 ]),
+                                html.Br(),
                                 html.Div([], id='prediction')
                                 ])
 
@@ -95,9 +101,15 @@ def update_output_div(input_value, submit_val, date_range):
 
     if input_value is None or input_value == '':
         return '', '', ''
+    
+    # else:
+    #     df = df_new(input_value)
 
     if button_id == 'submit-val':
-        return get_output(input_value, date_range)
+        return get_output(input_value, date_range)[0], \
+            get_output(input_value, date_range)[1], \
+            get_prediction(input_value)
+        # return get_output(input_value, date_range), get_prediction(get_output(input_value, date_range)[2])
     else:
         return get_output(input_value, date_range)[0], \
             get_output(input_value, date_range)[1], \
@@ -105,10 +117,9 @@ def update_output_div(input_value, submit_val, date_range):
 
 
 def get_output(entered_ticket, date_range):
-    # переписать, чтобы учитывалась вся граница доступного интервала
-    start_date = pd.Timestamp('2013-12-31') + \
+    start_date = pd.Timestamp('2008-12-31') + \
         pd.DateOffset(years=date_range[0])
-    end_date = pd.Timestamp('2013-12-31') + pd.DateOffset(years=date_range[1])
+    end_date = pd.Timestamp('2008-12-31') + pd.DateOffset(years=date_range[1])
     data_stock = yf.Ticker(entered_ticket)
     info = data_stock.info
     stock_df = data_stock.history(
@@ -116,8 +127,8 @@ def get_output(entered_ticket, date_range):
     stock_df.reset_index(inplace=True)
     close_price = stock_df[['Date', 'Close']]
     close_price.columns = ['Date', 'Close_price']
-    iv_price = df_new(entered_ticket)[
-        ['Date', 'Intrinsic Value']]
+    # df = df_new(entered_ticket)
+    iv_price = df_new(entered_ticket)[['Date', 'Intrinsic Value']]
     filtered_iv_price = iv_price.loc[(iv_price['Date'] >= start_date) & (
         iv_price['Date'] <= end_date)]
 
@@ -190,14 +201,23 @@ def get_output(entered_ticket, date_range):
         html.Div(['Bussiness Summary:', html.P(info['longBusinessSummary'])])
     ])
 
-    text2 = html.Div([
-        html.P(info['recommendationKey'])
-    ])
-
     return [html.Article(text),
-            dcc.Graph(figure=fig),
-            html.Article(text2)
+            dcc.Graph(figure=fig)
             ]
+
+
+def get_prediction(entered_ticket):
+    df = df_new(entered_ticket)
+    output = intrinsic_value_next(df)
+    next_intrinsic_value = output[0]
+    mse = output[1]
+    text2 = html.Div([
+        html.Div(['Intinsic value on next quarter is: ', f'{next_intrinsic_value:.02f} $']),
+        html.Div(['Probability (Mean Squared Error) of that price based on previous quarters data is: ', f'{mse:.02f}'])
+    ])
+    return [
+        html.Article(text2)
+    ]
 
 
 if __name__ == '__main__':

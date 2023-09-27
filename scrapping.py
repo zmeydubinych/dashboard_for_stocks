@@ -3,16 +3,20 @@ import yfinance as yf
 import json
 from selenium import webdriver
 import re
-from predicter import intrinsic_value
+from predicter import intrinsic_value_curr
+from predicter import intrinsic_value_next
 
-company_names = {'AAPL': 'apple',
-                 'NVDA': 'nvidia',
-                 'AMD': 'amd',
-                 'INTC': 'intel',
-                 'KO': 'cocacola',
-                 'TSLA': 'tesla',
-                 'PFE': 'pfizer'
-                 }
+def get_company_name(entered_ticket):
+    company_names = {'AAPL': 'apple',
+                     'NVDA': 'nvidia',
+                     'AMD': 'amd',
+                     'INTC': 'intel',
+                     'KO': 'cocacola',
+                     'TSLA': 'tesla',
+                     'PFE': 'pfizer'
+                     }
+    company_name=company_names[entered_ticket]
+    return company_name
 
 
 def get_df_from_url(url, driver):
@@ -30,7 +34,7 @@ def get_df_from_url(url, driver):
 
 
 def df_new(entered_ticket):
-    company_name=company_names[entered_ticket]
+    company_name = get_company_name(entered_ticket)
     options = webdriver.ChromeOptions()
     options.add_argument('--headless')
     driver = webdriver.Chrome(options=options)
@@ -50,7 +54,17 @@ def df_new(entered_ticket):
     df_concat['FCF'] = df_concat['Cash Flow From Operating Activities'].astype(
         float)+df_concat['Net Change In Property, Plant, And Equipment'].astype(float)
     df = df_concat
-    return intrinsic_value(df)
+    interest_rate = pd.read_csv(
+        'https://fred.stlouisfed.org/graph/fredgraph.csv?id=FEDFUNDS')
+    interest_rate = interest_rate.set_axis(['Date', 'Discount_rate'], axis=1)
+    interest_rate['Date'] = pd.to_datetime(interest_rate['Date'])
+    interest_rate['Discount_rate'] = interest_rate['Discount_rate']/100
+    interest_rate['Date'] = interest_rate['Date'].dt.to_period('M').dt.end_time
+    interest_rate['Date'] = interest_rate['Date'].dt.strftime('%Y-%m-%d')
+    interest_rate['Date'] = pd.to_datetime(interest_rate['Date'])
+    df = df.merge(interest_rate, left_on='Date',
+                  right_on='Date', how='left')
+    return intrinsic_value_curr(df)
 
-# df=df_new('KO')
+# df=df_new('AAPL')
 # print(df)
