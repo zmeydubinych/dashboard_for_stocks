@@ -64,7 +64,7 @@ def df_new(entered_ticket):
     interest_rate['Date'] = pd.to_datetime(interest_rate['Date'])
     df = df.merge(interest_rate, left_on='Date',
                   right_on='Date', how='left')
-    return intrinsic_value_curr(df)
+    return df
 
 # df=df_new('AAPL')
 # print(df)
