@@ -133,9 +133,9 @@ def get_info(data_stock):
     return html.Article(text)
 
 def get_graph(data_stock, df, date_range):
-    start_date = pd.Timestamp('2008-12-31') + \
+    start_date = pd.Timestamp('2009-12-31') + \
         pd.DateOffset(years=date_range[0])
-    end_date = pd.Timestamp('2008-12-31') + pd.DateOffset(years=date_range[1])
+    end_date = pd.Timestamp('2009-12-31') + pd.DateOffset(years=date_range[1])
     stock_df = data_stock.history(
         start=start_date, end=end_date, interval='1mo')
     stock_df.reset_index(inplace=True)
@@ -207,11 +207,11 @@ def get_prediction(df):
     output = intrinsic_value_next(df)
     next_intrinsic_value = output[0]
     mse = output[1]
-    text2 = html.Div([
+    text = html.Div([
         html.Div(['Intinsic value on next quarter is: ', f'{next_intrinsic_value:.02f} $']),
         html.Div(['Probability (Mean Squared Error) of that price based on previous quarters data is: ', f'{mse:.02f}'])
     ])
-    return html.Article(text2)
+    return html.Article(text)
 
 
 if __name__ == '__main__':

@@ -1,10 +1,7 @@
 import pandas as pd
-import yfinance as yf
 import json
 from selenium import webdriver
 import re
-from predicter import intrinsic_value_curr
-from predicter import intrinsic_value_next
 
 def get_company_name(entered_ticket):
     company_names = {'AAPL': 'apple',
