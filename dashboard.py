@@ -244,7 +244,7 @@ def get_prediction(df, data_stock):
     elif last_close < next_intrinsic_value*0.9:
         recomendations+= f", so you should definitely buy it"
     text = html.Div([
-        html.Div(['Intinsic value on next quarter is: ',
+        html.Div(['Intrinsic value on next quarter is: ',
                  f'{next_intrinsic_value:.02f} $']),
         html.Div(
             ['Probability (Mean Squared Error) of that price based on previous quarters data is: ', f'{mse:.02f}']),
