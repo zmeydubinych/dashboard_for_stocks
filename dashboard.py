@@ -1,12 +1,22 @@
 import pandas as pd
 import dash
-from dash import dcc, html, Input, Output, callback
+from dash import dcc, html, Input, Output, callback, State
 import plotly.graph_objects as go
 import plotly.express as px
 import yfinance as yf
 from scrapping import df_new
+from predicter import intrinsic_value_curr
 from predicter import intrinsic_value_next
+import time
 
+company_names = {'AAPL': 'apple',
+                 'NVDA': 'nvidia',
+                 'AMD': 'amd',
+                 'INTC': 'intel',
+                 'KO': 'cocacola',
+                 'TSLA': 'tesla',
+                 'PFE': 'pfizer'
+                 }
 
 # Блок дашборда
 
@@ -79,6 +89,9 @@ app.layout = html.Div(children=[html.H1('Dashboard: market price and evaluated p
 
 # Callback для ввода данных в нашу функцию и возврат графика в дашбоард
 
+df = None
+data_stock = None
+
 
 @app.callback(
     [
@@ -93,42 +106,69 @@ app.layout = html.Div(children=[html.H1('Dashboard: market price and evaluated p
     ]
 )
 def update_output_div(input_value, submit_val, date_range):
+    global df
+    global data_stock
     ctx = dash.callback_context
     if not ctx.triggered:
         button_id = 'No clicks yet'
     else:
         button_id = ctx.triggered[0]['prop_id'].split('.')[0]
 
-    if input_value is None or input_value == '':
+    if input_value is None or input_value == '' or input_value not in company_names:
+        df = None
+        data_stock = None
         return '', '', ''
-    
-    # else:
-    #     df = df_new(input_value)
+
+    elif (df is None and data_stock is None and input_value in company_names) or \
+            (input_value in company_names and input_value != dash.callback_context.inputs['input_text.value']):
+        df = df_new(input_value)
+        data_stock = yf.Ticker(input_value)
 
     if button_id == 'submit-val':
-        return get_output(input_value, date_range)[0], \
-            get_output(input_value, date_range)[1], \
-            get_prediction(input_value)
-        # return get_output(input_value, date_range), get_prediction(get_output(input_value, date_range)[2])
+        # start_time = time.time()
+        # end_time = time.time()
+        # execution_time = end_time - start_time
+        # percentage_time = (execution_time / end_time) * 100
+        # timer_text = f"Execution Time: {percentage_time:.2f}%"
+        return get_info(data_stock), \
+            get_graph(data_stock, df, date_range), \
+            get_prediction(df, data_stock), \
+            # timer_text
     else:
-        return get_output(input_value, date_range)[0], \
-            get_output(input_value, date_range)[1], \
+        return get_info(data_stock), \
+            get_graph(data_stock, df, date_range), \
             ''
 
 
-def get_output(entered_ticket, date_range):
-    start_date = pd.Timestamp('2008-12-31') + \
-        pd.DateOffset(years=date_range[0])
-    end_date = pd.Timestamp('2008-12-31') + pd.DateOffset(years=date_range[1])
-    data_stock = yf.Ticker(entered_ticket)
+def get_info(data_stock):
+    # def get_block(label, value):
+    # return html.Div([label, value])
     info = data_stock.info
+    text = html.Div([
+        html.Div(['Name: ', info['longName']]),
+        html.Div(['Country: ', info['country']]),
+        html.Div(['City: ', info['city']]),
+        html.Div(['ZIP: ', info['zip']]),
+        html.Div(['Address: ', info['address1']]),
+        html.Div(['Industry: ', info['industry']]),
+        html.Div(['Website: ', html.A(info['website'], href=info['website'])]),
+        html.Br(),
+        html.Div(['Bussiness Summary:', html.P(info['longBusinessSummary'])])
+    ])
+    return html.Article(text)
+
+
+def get_graph(data_stock, df, date_range):
+    start_date = pd.Timestamp('2009-12-31') + \
+        pd.DateOffset(years=date_range[0])
+    end_date = pd.Timestamp('2009-12-31') + pd.DateOffset(years=date_range[1])
     stock_df = data_stock.history(
         start=start_date, end=end_date, interval='1mo')
     stock_df.reset_index(inplace=True)
     close_price = stock_df[['Date', 'Close']]
     close_price.columns = ['Date', 'Close_price']
-    # df = df_new(entered_ticket)
-    iv_price = df_new(entered_ticket)[['Date', 'Intrinsic Value']]
+    df = intrinsic_value_curr(df)
+    iv_price = df[['Date', 'Intrinsic Value']]
     filtered_iv_price = iv_price.loc[(iv_price['Date'] >= start_date) & (
         iv_price['Date'] <= end_date)]
 
@@ -186,38 +226,32 @@ def get_output(entered_ticket, date_range):
     fig.update_layout(legend_orientation="h")
     fig.update_yaxes(tickprefix="$", showgrid=True)
 
-    # def get_block(label, value):
-    #     return html.Div([label, value])
-
-    text = html.Div([
-        html.Div(['Name: ', info['longName']]),
-        html.Div(['Country: ', info['country']]),
-        html.Div(['City: ', info['city']]),
-        html.Div(['ZIP: ', info['zip']]),
-        html.Div(['Address: ', info['address1']]),
-        html.Div(['Industry: ', info['industry']]),
-        html.Div(['Website: ', html.A(info['website'], href=info['website'])]),
-        html.Br(),
-        html.Div(['Bussiness Summary:', html.P(info['longBusinessSummary'])])
-    ])
-
-    return [html.Article(text),
-            dcc.Graph(figure=fig)
-            ]
+    return dcc.Graph(figure=fig)
 
 
-def get_prediction(entered_ticket):
-    df = df_new(entered_ticket)
+def get_prediction(df, data_stock):
     output = intrinsic_value_next(df)
     next_intrinsic_value = output[0]
     mse = output[1]
-    text2 = html.Div([
-        html.Div(['Intinsic value on next quarter is: ', f'{next_intrinsic_value:.02f} $']),
-        html.Div(['Probability (Mean Squared Error) of that price based on previous quarters data is: ', f'{mse:.02f}'])
+    last_close = data_stock.info['previousClose']
+    difference = next_intrinsic_value-last_close
+    recomendations = f"The difference between intrinsic value {next_intrinsic_value:.02f}$ \
+            and last close price {last_close:.02f}$ is {difference:.02f}$"
+    if last_close > next_intrinsic_value*1.5:
+        recomendations+= f", so you shoudn't buy or do it with some precautions"
+    elif last_close < next_intrinsic_value*1.5 and last_close >= next_intrinsic_value:
+        recomendations+= f", so you could buy it, but don't forget about diversification"
+    elif last_close < next_intrinsic_value*0.9:
+        recomendations+= f", so you should definitely buy it"
+    text = html.Div([
+        html.Div(['Intrinsic value on next quarter is: ',
+                 f'{next_intrinsic_value:.02f} $']),
+        html.Div(
+            ['Probability (Mean Squared Error) of that price based on previous quarters data is: ', f'{mse:.02f}']),
+        html.Div([recomendations])
+
     ])
-    return [
-        html.Article(text2)
-    ]
+    return html.Article(text)
 
 
 if __name__ == '__main__':
