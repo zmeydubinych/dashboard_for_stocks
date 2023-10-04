@@ -7,16 +7,12 @@ import yfinance as yf
 from scrapping import df_new
 from predicter import intrinsic_value_curr
 from predicter import intrinsic_value_next
+import json
 import time
 
-company_names = {'AAPL': 'apple',
-                 'NVDA': 'nvidia',
-                 'AMD': 'amd',
-                 'INTC': 'intel',
-                 'KO': 'cocacola',
-                 'TSLA': 'tesla',
-                 'PFE': 'pfizer'
-                 }
+
+with open("/home/ivan_pronin/IT/dashboard_for_stocks/stock_dict.json", "r") as f:
+    company_names = json.load(f)
 
 # Блок дашборда
 
