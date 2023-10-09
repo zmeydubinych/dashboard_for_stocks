@@ -11,7 +11,7 @@ import json
 import time
 
 
-with open("/home/ivan_pronin/IT/dashboard_for_stocks/stock_dict.json", "r") as f:
+with open('stock_dict.json', 'r') as f:
     company_names = json.load(f)
 
 # Блок дашборда

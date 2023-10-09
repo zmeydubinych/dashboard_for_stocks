@@ -4,7 +4,7 @@ from selenium import webdriver
 import re
 
 def get_company_name(entered_ticket):
-    with open("/home/ivan_pronin/IT/dashboard_for_stocks/stock_dict.json", "r") as f:
+    with open('stock_dict.json', 'r') as f:
         company_names = json.load(f)
     company_name=company_names[entered_ticket]
     return company_name
