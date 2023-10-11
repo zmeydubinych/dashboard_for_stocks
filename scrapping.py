@@ -3,6 +3,7 @@ import json
 from selenium import webdriver
 import re
 
+
 def get_company_name(entered_ticket):
     with open('stock_dict.json', 'r') as f:
         company_names = json.load(f)

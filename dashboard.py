@@ -1,6 +1,6 @@
 import pandas as pd
 import dash
-from dash import dcc, html, Input, Output, callback, State
+from dash import Dash, dcc, html, Input, Output, callback, State
 import plotly.graph_objects as go
 import plotly.express as px
 import yfinance as yf
@@ -16,7 +16,7 @@ with open('stock_dict.json', 'r') as f:
 
 # Блок дашборда
 
-app = dash.Dash(__name__)
+app = Dash(__name__)
 
 app.config.suppress_callback_exceptions = True
 
