@@ -42,8 +42,13 @@ def df_new(entered_ticket):
     df_concat = df_concat.set_axis(df_concat.iloc[0], axis=1).drop(0)
     df_concat = df_concat.rename(columns={'field_name': 'Date'})
     df_concat['Date'] = pd.to_datetime(df_concat['Date'])
-    df_concat['FCF'] = df_concat['Cash Flow From Operating Activities'].astype(
-        float)+df_concat['Net Change In Property, Plant, And Equipment'].astype(float)
+    for col in df_concat.columns:
+        df_concat[col] = df_concat[col].apply(lambda x: 0 if x == '' else x)
+    if 'Net Change In Property, Plant, And Equipment' in df_concat.columns:
+        df_concat['FCF'] = df_concat['Cash Flow From Operating Activities'].astype(float) + \
+            df_concat['Net Change In Property, Plant, And Equipment'].astype(float)
+    else:
+        df_concat['FCF'] = df_concat['Cash Flow From Operating Activities'].astype(float)
     df = df_concat
     interest_rate = pd.read_csv(
         'https://fred.stlouisfed.org/graph/fredgraph.csv?id=FEDFUNDS')
@@ -56,6 +61,3 @@ def df_new(entered_ticket):
     df = df.merge(interest_rate, left_on='Date',
                   right_on='Date', how='left')
     return df
-
-# df=df_new('AAPL')
-# print(df)
