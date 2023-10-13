@@ -15,7 +15,7 @@ import json
 with open('stock_dict.json', 'r') as f:
     company_names = json.load(f)
 
-engine = create_engine("mysql://python_admin:###########@95.163.243.20:3306/SP500")
+engine = create_engine('url')
 
 # Блок дашборда
 
