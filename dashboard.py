@@ -7,15 +7,10 @@ import yfinance as yf
 from scrapping import df_new
 from predicter import intrinsic_value_curr
 from predicter import intrinsic_value_next
-from sqlalchemy import create_engine
 import json
-# import time
-
 
 with open('stock_dict.json', 'r') as f:
     company_names = json.load(f)
-
-engine = create_engine('url')
 
 # Блок дашборда
 
@@ -121,7 +116,7 @@ def update_output_div(input_value, submit_val, date_range):
 
     elif (df is None and data_stock is None and input_value in company_names) or \
             (input_value in company_names and input_value != dash.callback_context.inputs['input_text.value']):
-        df = pd.read_sql(f'SELECT * FROM {input_value}', engine)
+        df = df_new(input_value)
         data_stock = yf.Ticker(input_value)
 
     if button_id == 'submit-val':
