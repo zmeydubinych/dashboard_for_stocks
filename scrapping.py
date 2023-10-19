@@ -28,6 +28,7 @@ def df_new(entered_ticket):
     company_name = get_company_name(entered_ticket)
     options = webdriver.ChromeOptions()
     options.add_argument('--headless')
+    options.add_argument('/usr/local/bin/chromedriver')
     driver = webdriver.Chrome(options=options)
     urls = {
         'url1': f'https://www.macrotrends.net/stocks/charts/{entered_ticket}/{company_name}/balance-sheet?freq=Q',

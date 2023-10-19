@@ -8,6 +8,9 @@ from scrapping import df_new
 from predicter import intrinsic_value_curr
 from predicter import intrinsic_value_next
 import json
+import warnings
+
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 with open('stock_dict.json', 'r') as f:
     company_names = json.load(f)
