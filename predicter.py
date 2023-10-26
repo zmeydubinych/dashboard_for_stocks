@@ -4,6 +4,7 @@ from pandas.api.types import is_object_dtype
 from sklearn.preprocessing import MinMaxScaler
 from keras.models import Sequential
 from keras.layers import Dense, LSTM
+from datetime import datetime, timedelta
 
 
 def intrinsic_value_curr(df):
@@ -25,7 +26,7 @@ def intrinsic_value_curr(df):
             df.loc[row, 'CDCF'] = df.loc[row, 'DCF']
         else:
             df.loc[row, 'Grow_rate'] = (
-                df.loc[row, 'FCF']/df.loc[row+1, 'FCF']-1)
+                df.loc[row, 'FCF']/(df.loc[row+1, 'FCF']+1e-10)-1)
             df.loc[row, 'CDCF'] = df.loc[row+1, 'CDCF']+df.loc[row, 'DCF']
     df['Market_value'] = (df['FCF']/(df['Discount_rate'] /
                           4-df['Grow_rate']))*df['Discount_factor']+df['CDCF']
@@ -49,8 +50,14 @@ def create_sequences(data, seq_length):
         y.append(data[i + seq_length])
     return np.array(X), np.array(y)
 
+def next_quarter_date(date):
+    quarter_month = date.month+3
+    next_quarter = datetime(date.year + quarter_month // 12, quarter_month % 12 + 1, 1)
+    return (next_quarter - timedelta(days=1))
+
 
 def intrinsic_value_next(df):
+    df=intrinsic_value_curr(df)
     data = df['FCF'][::-1]
     scaler = MinMaxScaler()
     scaled_data = scaler.fit_transform(data.values.reshape(-1, 1))
@@ -65,7 +72,7 @@ def intrinsic_value_next(df):
     ])
     model.compile(optimizer='adam', loss='mse')
     history=model.fit(X_train, y_train, epochs=350, verbose=False)
-    next_fcf = scaler.inverse_transform(model.predict(X_test).reshape(-1, 1))
+    next_fcf = np.squeeze(scaler.inverse_transform(model.predict(X_test).reshape(-1, 1)))
     next_disc_rate = df['Discount_rate'].loc[0]
     next_disc_factor = 1 / ((1 + next_disc_rate/4) ** ((len(df))))
     next_dcf = next_fcf*next_disc_factor
@@ -73,5 +80,8 @@ def intrinsic_value_next(df):
     next_market_value = (
         next_fcf/(next_disc_rate/4-df['Grow_rate'].loc[0]))*next_disc_factor+next_cdcf
     next_intrinsic_value = next_market_value/df['Shares Outstanding'].loc[0]
-    result=[next_intrinsic_value.item(), history.history["loss"][-1]]
-    return result
+    prediction_df=pd.DataFrame.from_dict({'Date':next_quarter_date(df.loc[0,'Date']), 'FCF':next_fcf, 'Discount_rate':next_disc_rate, 
+                            'Discount factor': next_disc_factor, 'DCF':next_dcf, 'CDCF':next_cdcf, 'Market value':next_market_value,
+                            'Intrinsic value': next_intrinsic_value.item()}, orient='index').transpose()
+    # result=[next_intrinsic_value, history.history["loss"][-1]]
+    return prediction_df
