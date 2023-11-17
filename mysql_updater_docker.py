@@ -21,9 +21,9 @@ current_date = datetime.now().date()
 
 # create engine drivers for mysql
 engine = create_engine(
-    "mysql://##################")
+    "mysql://#############")
 engine2 = create_engine(
-    "mysql://##################")
+    "mysql://#############")
 
 # load dict for companies
 with open('stock_dict.json', 'r') as f:
@@ -141,7 +141,7 @@ for ticket in company_names:
         print(f'load of {ticket} failed with error: {e}')
     collect()
 
-joblib.dump(problems_with_scraping, f'./problems_db_updater/scrapping_problems_{current_date}.csv')
+joblib.dump(problems_with_scraping, f'./problems_db_updater/scrapping_problems_{current_date}.txt')
 
 print('Updating for SP500 Databasee was finished succesfully')
 
@@ -166,7 +166,7 @@ for ticket in company_names:
         print(f'load of {ticket} failed with error: {e}')
     collect()
 
-joblib.dump(problems_with_yfinance, f'./problems_db_updater/yfinance_problems_{current_date}.csv')
+joblib.dump(problems_with_yfinance, f'./problems_db_updater/yfinance_problems_{current_date}.txt')
 
 print('Updating for YFINANCE Datebase was finished succesfully')
 
@@ -175,16 +175,15 @@ problems_with_top10 = []
 df_ = pd.DataFrame()
 for ticket in company_names:
     try:
-        data_stock = yf.Ticker(ticket)
-        df_close_price = pd.read_sql_table(ticket, engine2)
+        data_stock = pd.read_sql_table(ticket, engine2)
         df_iv_price = intrinsic_value_curr(
             pd.read_sql_table(ticket, engine), data_stock)
-        df_close_price = df_close_price.loc[df_close_price['Date']
+        data_stock = data_stock.loc[data_stock['Date']
                                             <= df_iv_price.loc[0, 'Date']].reset_index()
-        last_close_price = df_close_price.loc[0, 'Close']
+        last_close_price = data_stock.loc[0, 'Close']
         last_iv_value = df_iv_price.loc[0, 'Intrinsic Value']
         diff_price = df_iv_price.loc[0, 'Intrinsic Value'].astype(  # type: ignore
-            float) - df_close_price.loc[0, 'Close'].astype(float)  # type: ignore
+            float) - data_stock.loc[0, 'Close'].astype(float)  # type: ignore
         df_compare = pd.DataFrame.from_dict({'symbol': ticket, 'Date': df_iv_price.loc[0, 'Date'],
                                              'Close price': last_close_price, 'Intrinsic Value': last_iv_value,
                                              'Difference': diff_price}, orient='index').transpose()
@@ -200,7 +199,7 @@ top10 = df_.sort_values(by='Difference', ascending=False).head(10)
 top10['symbol'].apply(lambda x: f'{x}: {company_names[x]}')
 top10.to_sql(name='TOP10', con=engine, if_exists='replace', index=False)
 
-joblib.dump(problems_with_top10, f'./problems_db_updater/top10_problems_{current_date}.csv')
+joblib.dump(problems_with_top10, f'./problems_db_updater/top10_problems_{current_date}.txt')
 
 print('Proccess of downloading and uploadeding for top10 table to DataBase successfully finished')
 
