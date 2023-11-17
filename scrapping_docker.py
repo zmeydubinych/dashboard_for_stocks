@@ -15,7 +15,7 @@ def get_df_from_url(url, driver):
     script = 'return document.querySelector("body > div.main_content_container.container-fluid > script:nth-child(7)").textContent;'
     pattern = re.compile(r'var originalData = (\[.*?\]);', re.DOTALL)
     data_raw = driver.execute_script(script)
-    data = pattern.search(data_raw).group(1)
+    data = pattern.search(data_raw).group(1) # type: ignore
     data = json.loads(data)
     df = pd.DataFrame(data)
     df.drop(columns=['popup_icon'], inplace=True)
@@ -28,7 +28,8 @@ def df_new(entered_ticket):
     company_name = get_company_name(entered_ticket)
     options = webdriver.ChromeOptions()
     options.add_argument('--headless')
-    options.add_argument('/usr/local/bin/chromedriver')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
     driver = webdriver.Chrome(options=options)
     urls = {
         'url1': f'https://www.macrotrends.net/stocks/charts/{entered_ticket}/{company_name}/balance-sheet?freq=Q',
@@ -43,13 +44,8 @@ def df_new(entered_ticket):
     df_concat = df_concat.set_axis(df_concat.iloc[0], axis=1).drop(0)
     df_concat = df_concat.rename(columns={'field_name': 'Date'})
     df_concat['Date'] = pd.to_datetime(df_concat['Date'])
-    for col in df_concat.columns:
-        df_concat[col] = df_concat[col].apply(lambda x: 0 if x == '' else x)
-    if 'Net Change In Property, Plant, And Equipment' in df_concat.columns:
-        df_concat['FCF'] = df_concat['Cash Flow From Operating Activities'].astype(float) + \
-            df_concat['Net Change In Property, Plant, And Equipment'].astype(float)
-    else:
-        df_concat['FCF'] = df_concat['Cash Flow From Operating Activities'].astype(float)
+    df_concat['FCF'] = df_concat['Cash Flow From Operating Activities'].astype(
+        float)+df_concat['Net Change In Property, Plant, And Equipment'].astype(float)
     df = df_concat
     interest_rate = pd.read_csv(
         'https://fred.stlouisfed.org/graph/fredgraph.csv?id=FEDFUNDS')

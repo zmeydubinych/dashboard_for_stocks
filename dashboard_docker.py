@@ -1,3 +1,6 @@
+import json
+from warnings import filterwarnings
+import sd_material_ui as sdui
 import pandas as pd
 import dash
 from dash import Dash, dcc, html, Input, Output
@@ -6,16 +9,15 @@ import plotly.express as px
 from predicter import intrinsic_value_curr
 from predicter import intrinsic_value_next
 from sqlalchemy import create_engine
-import warnings
-import json
 
+filterwarnings('ignore')
 
-warnings.filterwarnings("ignore", category=FutureWarning)
+#some praparation before start dashboard
 
 engine = create_engine(
-    "mysql://python_admin:wofawzfa1984@95.163.243.20:3306/SP500")
+    "mysql://###############")
 engine2 = create_engine(
-    "mysql://python_admin:wofawzfa1984@95.163.243.20:3306/YFINANCE")
+    "mysql://###############")
 
 with open('stock_dict.json', 'r') as f:
     company_names = json.load(f)
@@ -26,92 +28,112 @@ top10 = pd.read_sql_table('TOP10', engine)
 options_dropdown = [{'label': f'{key} : {value.capitalize()}', 'value': key}
                     for key, value in company_names.items()]
 
+quote = 'Intrinsic value measures the value of an investment based on its cash flows. Where market value tells you the price other people are willing to pay for an asset, intrinsic value shows you the asset’s value based on an analysis of its actual financial performance. The main metric in this case for analyzing financial performance is discounted cash flow (DCF).'
 
 list_of_years = [2009, 2010, 2011, 2012, 2013, 2014,
                  2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023]
 years_keys = {}
 
-for key in range(15):
-    years_keys.update({key: list_of_years[key]})
+for i,year in enumerate(list_of_years):
+    years_keys.update({i: year})
 
 options_slider = [{'label': value, 'value': key}
                   for key, value in years_keys.items()]
 
-# Блок дашборда
+# Dashboard_layer
 
 app = Dash(__name__)
 
 app.config.suppress_callback_exceptions = True
 
-app.layout = html.Div(children=[html.H2('Dashboard: market price and evaluated price of stocks',
-                                        style={'textAlign': 'center',
-                                               'font-family': 'Arial'}),
-                                html.Div([
-                                    html.Div(
-                                        [
-                                            html.H3('Choose company:',
-                                                    style={
-                                                        'font-family': 'Arial',
-                                                        'margin-left': '20px'}
-                                                    ),
-                                        ]
-                                    ),
-                                    html.Div([
-                                        dcc.Dropdown(
-                                            id='input-company',
-                                            options=options_dropdown,
-                                            style={'width': 250,
-                                                   'margin-left': '10px',
-                                                   'font-family': 'Arial'},
-                                            value='',
-                                        )
-                                    ])
-                                ]),
-                                html.Br(),
-                                html.Div([], id='article', style={
-                                         'margin-left': '20px',
-                                         'font-family': 'Arial'}),
-                                html.Div([
-                                    html.Div(
-                                        [
-                                            html.H3('Clarify year series:',
-                                                    style={
-                                                        'font-family': 'Arial',
-                                                        'margin-left': '20px'}
-                                                    ),
-                                        ]
-                                    ),
-                                    html.Div([
-                                        dcc.RangeSlider(
-                                            id='date-slider',
-                                            min=0,
-                                            max=14,
-                                            step=None,
-                                            marks=options_slider,
-                                            value=[0, 14]
-                                        )
-                                    ])
-                                ]),
-                                html.Br(),
-                                html.Div([
-                                    html.Button(children='Make a prediction, this may take several minutes',
-                                                id='submit-val', n_clicks=0,
-                                                style={
-                                                    'font-family': 'Arial',
-                                                    'background-color': 'light gray',
-                                                    'color': 'dark gray',
-                                                    'border-radius': '5px',
-                                                    'transition-duration': '0.4s',
-                                                    'margin-left': '20px'
-                                                }
-                                                )]),
-                                html.Br(),
-                                html.Div([], id='plot'),
-                                html.Br(),
-                                html.Div([], id='plot2'),
-                                ])
+app.layout = sdui.Paper([html.Div(children=[html.Br(),
+                                            html.H2('Dashboard: market price and evaluated price of stocks',
+                                                    style={'textAlign': 'center',
+                                                           'font-family': 'Arial',
+                                                           }),
+                                            html.Div([
+                                                html.Div(
+                                                    [
+                                                        html.H3('Choose company:',
+                                                                style={
+                                                                    'font-family': 'Arial',
+                                                                    'margin-left': '20px'}
+                                                                ),
+                                                    ]
+                                                ),
+                                                html.Div([
+                                                    dcc.Dropdown(
+                                                        id='input-company',
+                                                        options=options_dropdown,
+                                                        style={'width': 250,
+                                                               'font-family': 'Arial'},
+                                                        value='',
+                                                    )
+                                                ], style={'margin-left': '20px'})
+                                            ]),
+                                            html.Br(),
+                                            html.Div([], id='article', style={
+                                                'margin-left': '20px',
+                                                'font-family': 'Arial'}),
+                                            html.Div([
+                                                html.Div(
+                                                    [
+                                                        html.H3('Clarify year series:',
+                                                                style={
+                                                                    'font-family': 'Arial',
+                                                                    'margin-left': '20px'}
+                                                                ),
+                                                    ]
+                                                ),
+                                                html.Div([
+                                                    dcc.RangeSlider(
+                                                        id='date-slider',
+                                                        min=0,
+                                                        max=14,
+                                                        step=None,
+                                                        marks=options_slider,
+                                                        value=[0, 14]
+                                                    )
+                                                ])
+                                            ]),
+                                            html.Br(),
+                                            html.Div([
+                                                html.Button(children='Make a prediction, this may take several minutes',
+                                                            id='submit-val', n_clicks=0,
+                                                            style={
+                                                                'font-family': 'Arial',
+                                                                'background-color': 'light gray',
+                                                                'color': 'dark gray',
+                                                                'border-radius': '5px',
+                                                                'transition-duration': '0.4s',
+                                                                'margin-left': '20px'
+                                                            }
+                                                            )
+                                            ]),
+                                            html.Br(),
+                                            html.Div([], id='plot'),
+                                            html.Br(),
+                                            html.Div([], id='plot2'),
+                                            html.Br(),
+                                            html.Div([html.H5('What Is Intrinsic value?',
+                                                              style={
+                                                                  'color': 'dark gray',
+                                                                  'font-family': 'Arial',
+                                                                  'font-size': 12,
+                                                                  'margin-left': '20px'}
+                                                              ),
+                                                      html.Article(quote,
+                                                                   style={
+                                                                       'font-family': 'Arial',
+                                                                       'color': 'dark gray',
+                                                                       'margin-left': '20px',
+                                                                       'font-size': 10
 
-# Callback для ввода данных в нашу функцию и возврат графика в дашбоард
+                                                                   })]),
+                                            html.Br()
+                                            ])])
+
+# Callback and update_division_functions
 
 df = None
 data_stock = None
@@ -121,15 +143,16 @@ data_stock = None
     [
         Output(component_id='article', component_property='children'),
         Output(component_id='plot', component_property='children'),
-        Output(component_id='plot2', component_property='children'),
+        Output(component_id='plot2', component_property='children')
     ],
     [
         Input(component_id='input-company', component_property='value'),
         Input(component_id='submit-val', component_property='n_clicks'),
-        Input(component_id='date-slider', component_property='value')
+        Input(component_id='date-slider', component_property='value'),
     ]
 )
 def update_output_div(input_value, submit_val, date_range):
+    """Function for updating output divisions"""
     global df
     global data_stock
 
@@ -148,7 +171,7 @@ def update_output_div(input_value, submit_val, date_range):
         data_stock = pd.read_sql_table(input_value, engine2)
 
     if button_id == 'submit-val':
-        df_prediction = intrinsic_value_next(df)
+        df_prediction = intrinsic_value_next(df, data_stock)
         return get_info(data_info, input_value), \
             get_graph(data_stock, df, date_range, df_prediction, input_value), \
             get_top_graph()
@@ -161,13 +184,12 @@ def update_output_div(input_value, submit_val, date_range):
 
 
 def get_info(data_info, input_value):
+    """Get info division from data_stock"""
     text = html.Div([
         html.Div(['Name: ', data_info.loc[input_value, 'name']]),
         html.Div(['Address: ', f'{data_info.loc[input_value, "address1"]}, \
                   {data_info.loc[input_value, "address2"]}']),
         html.Div(['Industry: ', data_info.loc[input_value, 'industry']]),
-        # html.Div(['Website: ', html.A(data_info.loc[input_value,
-        #          'website'], href=data_info.loc[input_value, 'website'])]),
         html.Br(),
         html.Div(['Bussiness Summary:', html.P(
             data_info.loc[input_value, 'summary'])])
@@ -176,6 +198,7 @@ def get_info(data_info, input_value):
 
 
 def get_graph(data_stock, df, date_range, df_prediction, input_value):
+    """Get graph for main division"""
     start_date = pd.Timestamp('2009') + \
         pd.DateOffset(years=date_range[0])
     end_date = pd.Timestamp('2010') + pd.DateOffset(years=date_range[1])
@@ -184,7 +207,7 @@ def get_graph(data_stock, df, date_range, df_prediction, input_value):
     stock_df.reset_index(inplace=True)
     close_price = stock_df[['Date', 'Close']]
     close_price.columns = ['Date', 'Close_price']
-    df = intrinsic_value_curr(df)
+    df = intrinsic_value_curr(df, data_stock)
     iv_price = df[['Date', 'Intrinsic Value']]
     filtered_iv_price = iv_price.loc[(iv_price['Date'] >= start_date) & (
         iv_price['Date'] <= end_date)]
@@ -246,11 +269,11 @@ def get_graph(data_stock, df, date_range, df_prediction, input_value):
         recomendations = f"Future intrinsic value evaluated using RNN neural network.<br> \
             The difference between intrinsic value {next_intrinsic_value:.02f}$ and last close price {last_close:.02f}$ is {difference:.02f}$, <br>"
         if last_close > next_intrinsic_value*1.5:
-            recomendations += f"so you shoudn't buy or do it with some precautions"
+            recomendations += "so you shoudn't buy or do it with some precautions"
         elif last_close < next_intrinsic_value*1.5 and last_close >= next_intrinsic_value:
-            recomendations += f"so you could buy it, but don't forget about diversification"
+            recomendations += "so you could buy it, but don't forget about diversification"
         elif last_close < next_intrinsic_value*0.9:
-            recomendations += f"so you should definitely buy it"
+            recomendations += "so you should definitely buy it"
         fig.add_trace(go.Bar(x=df_prediction['Date'],
                              y=df_prediction['Intrinsic value'],
                              name='Intrinsic value next quarter by LSTM Model',
@@ -276,6 +299,7 @@ def get_graph(data_stock, df, date_range, df_prediction, input_value):
 
 
 def get_top_graph():
+    """Function for TOP10 stocks graph"""
     symbol_to_company = top10['symbol'].apply(
         lambda x: f'{x}: {company_names[x]}')
     fig = go.Figure()

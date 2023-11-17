@@ -1,0 +1,27 @@
+FROM python:3.11.4
+
+WORKDIR /database_updater
+
+# install all packages for chromedriver.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gnupg wget curl unzip && \
+    wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - && \
+    echo "deb http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google.list && \
+    apt-get update -y && \
+    apt-get install -y --no-install-recommends google-chrome-stable && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/* && \
+    CHROME_VERSION=$(google-chrome --product-version) && \
+    wget -q --continue -P /chromedriver "https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/$CHROME_VERSION/linux64/chromedriver-linux64.zip" && \
+    unzip /chromedriver/chromedriver* -d /usr/local/bin/ && \
+    rm -rf /chromedriver
+
+COPY mysql_updater_docker.py predicter.py stock_dict.json sp500history.csv requirements.txt /database_updater/
+
+RUN pip install -r /database_updater/requirements.txt
+
+ENV PORT 3000
+
+EXPOSE $PORT
+
+CMD ["python", "-u", "mysql_updater_docker.py"]
