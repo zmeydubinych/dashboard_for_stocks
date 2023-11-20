@@ -1,0 +1,13 @@
+FROM python:3.11.4
+
+WORKDIR /top10_updater
+
+COPY top10_docker.py predicter.py stock_dict.json requirements.txt /top10_updater/
+
+RUN pip install -r /top10_updater/requirements.txt
+
+ENV PORT 3000
+
+EXPOSE $PORT
+
+CMD ["python", "-u", "top10_docker.py"]
