@@ -16,7 +16,7 @@ RUN apt-get update && \
     unzip /chromedriver/chromedriver* -d /usr/local/bin/ && \
     rm -rf /chromedriver
 
-COPY mysql_updater_docker.py predicter.py stock_dict.json sp500history.csv requirements.txt /database_updater/
+COPY mysql_updater_docker.py stock_dict.json sp500history.csv requirements.txt /database_updater/
 
 RUN pip install -r /database_updater/requirements.txt
 

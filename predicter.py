@@ -48,12 +48,15 @@ def intrinsic_value_curr(df: pd.DataFrame, data_stock):
 
     # calculate capitalization rate via stock price and operating income
     for row in range(len(df)-1, -1, -1):
-        start = df.loc[row, 'Date']
-        price_last_quarter = data_stock.loc[data_stock["Date"]
-                                            == start+timedelta(days=1), 'Close'].item()  # type: ignore
-        df.loc[row, 'Cap_rate'] = df['Operating Income'].astype(
-            float)[row]/(price_last_quarter * df['Shares Outstanding'].astype(float)[row]+1e-10)
-        if df.loc[row, 'Cap_rate'] < 0.01:  # type: ignore
+        try:
+            start = df.loc[row, 'Date']
+            price_last_quarter = data_stock.loc[data_stock["Date"]
+                                                == start + timedelta(days=1), 'Close'].item()  # type: ignore
+            df.loc[row, 'Cap_rate'] = df['Operating Income'].astype(
+                float)[row]/(price_last_quarter * df['Shares Outstanding'].astype(float)[row]+1e-10)
+            if df.loc[row, 'Cap_rate'] < 0.01:  # type: ignore
+                df.loc[row, 'Cap_rate'] = 0.01
+        except Exception:
             df.loc[row, 'Cap_rate'] = 0.01
 
     # calculate ROA, ROA_market, FR_market
